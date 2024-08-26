@@ -8,6 +8,8 @@ from collections import deque
 import cv2
 import mediapipe as mp
 
+from ui import Drawer
+
 def get_args():
     parser = argparse.ArgumentParser()
 
@@ -35,9 +37,11 @@ def main():
     show_image = args.show_image
 
 
-    cap = cv2.VideoCapture(cap_device)
+    cap = cv2.VideoCapture(0)
+    # cap = cv2.VideoCapture(cap_device)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, cap_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cap_height)
+
 
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
@@ -47,11 +51,9 @@ def main():
             min_tracking_confidence=min_tracking_confidence,
     )
 
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing_styles = mp.solutions.drawing_styles
+    drawer = Drawer(mp_hands)
 
     while True:
-
         # camera capture
         success, image = cap.read()
         if not success:
@@ -64,13 +66,11 @@ def main():
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = hands.process(image)
 
-
         if results.multi_hand_landmarks:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                 print('HAND LANDMARKS: ', hand_landmarks)
                 print('HANDEDNESS: ', handedness)
-
-
+                pass
 
         if show_image:
             key = cv2.waitKey(10)
@@ -79,23 +79,19 @@ def main():
 
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-            if results.multi_hand_landmarks:
-                for hand_landmarks in results.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(
-                            image,
-                            hand_landmarks,
-                            mp_hands.HAND_CONNECTIONS,
-                            mp_drawing_styles.get_default_hand_landmarks_style(),
-                            mp_drawing_styles.get_default_hand_connections_style()
-                    )
-
+            image = drawer.draw_ui(image, results)
             cv2.imshow('Gesture recognition', image)
 
     cap.release()
     if show_image:
         cv2.destroyAllWindows()
 
+
+# TODO:
+# landmark list, draw landmarks to make it look unique
+# text above to show classification
+# start logging data with different modes
+# auto train model
 
 if __name__ == '__main__':
     main()
