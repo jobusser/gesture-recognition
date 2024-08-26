@@ -25,6 +25,8 @@ def get_args():
     return args
 
 
+
+
 def main():
     args = get_args()
 
@@ -66,20 +68,23 @@ def main():
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = hands.process(image)
 
+
         if results.multi_hand_landmarks:
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                 print('HAND LANDMARKS: ', hand_landmarks)
                 print('HANDEDNESS: ', handedness)
-                pass
 
         if show_image:
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+            if results.multi_hand_landmarks:
+                image = drawer.draw_landmarks(image, results)
+
             key = cv2.waitKey(10)
             if key == 27: # ESC
                 break
-
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            image = drawer.draw_ui(image, results)
+            image = drawer.draw_ui(image)
             cv2.imshow('Gesture recognition', image)
 
     cap.release()
